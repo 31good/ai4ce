@@ -57,3 +57,5 @@ for sequence in os.listdir(os.path.join(root_dir,"data_3d_raw")):
             newfile_path = os.path.join(save_path, filename)
             # print(newfile_path)
             shutil.copyfile(from_path, newfile_path)
+shutil.copyfile(src, dst)
+shutil.copyfile(src, dst)
