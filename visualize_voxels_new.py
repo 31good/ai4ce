@@ -352,6 +352,7 @@ class Window:
 
   def run(self,output):
     # Loop until the user closes the window
+    os.makedirs(output)
     while not glfw.window_should_close(self.window):
       # Poll for and process events
       glfw.poll_events()
@@ -512,7 +513,7 @@ class Window:
       image = image[:600, :800, :]
       #image = image[:900, :4800, :]
       image = np.flip(image, axis=0)
-      cv2.imwrite(output + str(self.currentTimestep) + "_image.png", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+      cv2.imwrite(output + "/"+str(self.currentTimestep) + "_image.png", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
 
 if __name__ == "__main__":
