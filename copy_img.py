@@ -14,7 +14,7 @@ for filename in image_path:  # 遍历pathDir下的所有文件filename
     # print(filename)
     from_path = os.path.join(image_path, filename)  # 旧文件的绝对路径(包含文件的后缀名)
     to_path = save_path  # 新文件的绝对路径
-    newfile_path = os.path.join(save_path, "%06d"%ind+".png")
+    newfile_path = os.path.join(save_path, str(ind)+"_image.png")
     ind+=1
     # print(newfile_path)
     shutil.copyfile(from_path, newfile_path)
