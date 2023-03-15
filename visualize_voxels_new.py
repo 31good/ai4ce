@@ -535,7 +535,7 @@ if __name__ == "__main__":
       help='Sequence to visualize. Defaults to %(default)s',
   )
   
-    parser.add_argument(
+  parser.add_argument(
       '--output',
       '-o',
       type=str,
