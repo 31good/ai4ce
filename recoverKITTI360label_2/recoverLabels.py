@@ -10,12 +10,13 @@ args = parser.parse_args()
 root_dir = args.kitti_dir
 output_dir = args.output_dir
 
-root_dir="/home/allenzj/KITTI-360"
+root_dir="/mnt/hdd_0/KITTI-360"
 output_dir="/home/allenzj/Semantic-KITTI/sequences/10/single"
-velodyne_file_path=r'/home/allenzj/KITTI-360/data_3d_raw/2013_05_28_drive_0003_sync/velodyne_points/data'
-labels_file_path=r'/home/allenzj/Semantic-KITTI/sequences/03/labels'
+velodyne_file_path=r'/mnt/hdd_0/KITTI-360/data_3d_raw/2013_05_28_drive_0010_sync/velodyne_points/data'
+#labels_file_path=r'/home/allenzj/Semantic-KITTI/sequences/03/labels'
 dict={}
 for sequence in os.listdir(os.path.join(root_dir,"data_3d_raw")):
+    if(sequence!='2013_05_28_drive_0010_sync')
     all_spcds = os.listdir(os.path.join(os.path.join(os.path.join(root_dir,"data_3d_semantics/train"),sequence),"static"))
     all_spcds.sort()
     for i in range(len(all_spcds)):
@@ -41,8 +42,8 @@ for sequence in os.listdir(os.path.join(root_dir,"data_3d_raw")):
         PA.addVelodynePoints()
         PA.getPointsInRange()
         PA.recoverLabel(spcd,spcd_prev,spcd_next)
-        """
         PA.writeToFiles()
+        """
         mkdir(output_dir+"/velodyne")
         save_path = output_dir+"/velodyne"
         pathDir = sorted(os.listdir(velodyne_file_path))  # os.listdir(file_path) 是获取指定路径下包含的文件或文件夹列表

@@ -77,7 +77,6 @@ class PointAccumulation:
         self.mydict={0:0,6:49,7:40,8:48,9:44,10:16,11:50,12:52,13:51,14:49,15:49,16:49,17:80,18:80, 19:99,20:81,21:70,22:72,
          23:99, 24:30,25:30,26:10,27:18,28:13,29:20,30:20,31:20,32:15,33:11,34:52,35:52,36:99,42:52,43:20,
          44:99,37:99,38:99,39:99,40:99,41:99}
-        self.caredict={10:1,12:1,14:1,16:1,18:1,19:1,23:1,25:1,29:1,30:1,31:1,34:1,35:1,36:1,37:1,38:1,39:1,40:1,41:1}
     def createOutputDir(self):
         print("Output direction : " + self.outputPath)
         return mkdir(self.outputPath)
@@ -415,7 +414,7 @@ class PointAccumulation:
             writeTimestampToFile(self.output_file_timestamps, self.Ts)
         else:
             label_folder = self.outputPathLabel
-            mkdir(label_folder)
+            #mkdir(label_folder)
             if (self.verbose):
                 print("write labels to folder %s ...\n" % label_folder)
             writeLabelsToFolder(label_folder, self.labels, self.Ts, self.globalIdx, self.numPts)
@@ -502,9 +501,5 @@ class PointAccumulation:
         dist, ind = tree.query(self.Md)
         mask = dist[:,0]<rangeS
         self.labels[mask] = superpcd_combined[ind[:,0][mask],3]
-        for element in self.labels:
-            if(element in self.caredict):
-                self.caredict[element]=ind
-        print(self.caredict)
         self.labels=np.vectorize(self.mydict.get)(self.labels.astype("int32"))
  

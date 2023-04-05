@@ -11,6 +11,8 @@ KOGMO_TIMESTAMP_TICKSPERSECOND =  1000000000.0
  * @out transform 4*4 matrix from file
  * @return True if loading is successful. (success)
 '''
+caredict = {10: 1, 12: 1, 14: 1, 16: 1, 18: 1, 19: 1, 23: 1, 25: 1, 29: 1, 30: 1, 31: 1, 34: 1, 35: 1, 36: 1,
+                 37: 1, 38: 1, 39: 1, 40: 1, 41: 1}
 
 def loadTransform(filename):
 
@@ -224,7 +226,11 @@ def writeLabelsToFolder(path, labels, Ts, indices, numPts):
         lookedAt = array_Ts==val 
         labelSaved = np.ones(nPts,dtype=np.int32)*(-1)
         labelSaved[array_indices[lookedAt]] = labels[lookedAt].reshape(-1)
-        labelSaved.tofile(name_file)
+        for element in labelSaved:
+            if(element in caredict):
+                caredict[element]=ind
+        print(caredict)
+        #labelSaved.tofile(name_file)
 
 
 def writePointCloudsToFolder(path, Md, labels, Ts, indices, numPts):
