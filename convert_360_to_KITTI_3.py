@@ -120,7 +120,7 @@ trainId2label = {label.trainId: label for label in reversed(labels)}
 # KITTI-360 ID to cityscapes ID
 kittiId2label = {label.kittiId: label for label in labels}
 
-kitti360_root = "/home/allenzj/KITTI-360"
+kitti360_root = "/mnt/hdd_0/KITTI-360"
 img_width = 256*2
 img_height = 256*2
 
@@ -166,7 +166,7 @@ def get_toworld_matrix(obj):
 
 
 def main():
-    save_dir="/home/allenzj/Semantic-KITTI/sequences/03/dynamic"
+    save_dir="/mnt/hdd_0/KITTI-360/sequences/03/dynamic"
     label_folder = os.path.join(save_dir, 'labels')
     calib_folder = save_dir
     lidar_folder = os.path.join(save_dir, 'velodyne')
@@ -182,10 +182,10 @@ def main():
     #pcd_dir = kitti360_root + "/data_3d_semantics/train/2013_05_28_drive_0000_sync/dynamic/0000009886_0000010098.ply"
     box_dir = kitti360_root + "/data_3d_bboxes/train/2013_05_28_drive_0003_sync.xml"
 # not sure
-    poses_file = open("/home/allenzj/KITTI-360/data_poses/2013_05_28_drive_0003_sync/poses.txt","r")
+    poses_file = open("/mnt/hdd_0/KITTI-360/data_poses/2013_05_28_drive_0003_sync/poses.txt","r")
     #poses_file = open("/home/allenzj/KITTI-360/data_poses/2013_05_28_drive_0000_sync/cam0_to_world.txt", "r")
-    calib_file=open("/home/allenzj/KITTI-360/calibration/calib_cam_to_velo.txt","r")
-    calib_file_1=open("/home/allenzj/KITTI-360/calibration/calib_cam_to_pose.txt","r")
+    calib_file=open("/mnt/hdd_0/KITTI-360/calibration/calib_cam_to_velo.txt","r")
+    calib_file_1=open("/mnt/hdd_0/KITTI-360/calibration/calib_cam_to_pose.txt","r")
     poses_lines = poses_file.readlines()
     poses = {}
     for line in poses_lines:
