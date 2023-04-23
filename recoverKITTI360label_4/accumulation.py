@@ -469,11 +469,9 @@ class PointAccumulation:
                 superpcd_dynamic = readBinaryPly(superpcPath_dynamic,n_pts_dynamic,False)
                 superpcd_dynamic_selec = superpcd_dynamic[:,[0,1,2,6]]
 
-                superpcd_combined = np.concatenate((superpcd_static_selec, superpcd_dynamic_selec))
-            else: 
-            """
-	    print("{}{}". format("The following file does not have any points and will be skipped",superpcPath_dynamic))
-	    superpcd_combined = superpcd_static_selec
+                superpcd_combined = np.concatenate((superpcd_static_selec, superpcd_dynamic_selec))"""
+            print("{}{}". format("The following file does not have any points and will be skipped",superpcPath_dynamic))
+            superpcd_combined = superpcd_static_selec
 
             tree = KDTree(superpcd_combined[:,:3]) 
             dist, ind = tree.query(self.Md)
