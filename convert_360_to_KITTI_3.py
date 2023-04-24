@@ -6,6 +6,44 @@ import re
 import os
 import glob
 
+def parseMatrix(data, rows, cols):  # 分割matrix
+    if (type(data) != type([])):
+        data = data.split(' ')
+    mat = []
+    for d in data:
+        d = d.replace('\n', '')
+        if len(d) < 1:
+            continue
+        mat.append(float(d))
+    mat = np.reshape(mat, [rows, cols])
+    return mat
+
+def inverse_rigid_trans(Tr):
+    ''' Inverse a rigid body transform matrix (3x4 as [R|t])
+        [R'|-R't; 0|1]
+    '''
+    inv_Tr = np.zeros_like(Tr)  # 3x4
+    inv_Tr[0:3, 0:3] = np.transpose(Tr[0:3, 0:3])
+    inv_Tr[0:3, 3] = np.dot(-np.transpose(Tr[0:3, 0:3]), Tr[0:3, 3])
+    inv_Tr[3,3]=1
+    #print(inv_Tr)
+    return inv_Tr
+
+
+
+
+def readcam2world(path, word2cam=False):  # 读取cam0_to_world
+    with open(file=path, mode="r") as f:
+        data = f.readlines()
+        ret = {}
+        for d in data:
+            frame = int(d.split()[0])
+            if word2cam:
+                ret[frame] = np.linalg.inv(parseMatrix(d.split()[1:], 4, 4))
+            else:
+                ret[frame] = parseMatrix(d.split()[1:], 4, 4)
+        return ret
+
 
 Label = namedtuple('Label', [
 
@@ -120,7 +158,7 @@ trainId2label = {label.trainId: label for label in reversed(labels)}
 # KITTI-360 ID to cityscapes ID
 kittiId2label = {label.kittiId: label for label in labels}
 
-kitti360_root = "/mnt/hdd_0/KITTI-360"
+kitti360_root = "/home/allenzj/KITTI-360"
 img_width = 256*2
 img_height = 256*2
 
@@ -172,7 +210,7 @@ def main():
     lidar_folder = os.path.join(save_dir, 'velodyne')
     pose_folder = save_dir
     calib_folder = save_dir
-#TODO: calib (current manaul)
+
     for folder in [label_folder, calib_folder, lidar_folder, pose_folder]:
         if not os.path.isdir(folder):
             os.makedirs(folder)
@@ -182,10 +220,22 @@ def main():
     #pcd_dir = kitti360_root + "/data_3d_semantics/train/2013_05_28_drive_0000_sync/dynamic/0000009886_0000010098.ply"
     box_dir = kitti360_root + "/data_3d_bboxes/train/2013_05_28_drive_0003_sync.xml"
 # not sure
-    poses_file = open("/mnt/hdd_0/KITTI-360/data_poses/2013_05_28_drive_0003_sync/poses.txt","r")
+    poses_file = "/mnt/hdd_0/KITTI-360/data_poses/2013_05_28_drive_0003_sync/cam0_to_world.txt"
     #poses_file = open("/home/allenzj/KITTI-360/data_poses/2013_05_28_drive_0000_sync/cam0_to_world.txt", "r")
     calib_file=open("/mnt/hdd_0/KITTI-360/calibration/calib_cam_to_velo.txt","r")
-    calib_file_1=open("/mnt/hdd_0/KITTI-360/calibration/calib_cam_to_pose.txt","r")
+
+    calib_lines = calib_file.readlines()
+    for line in calib_lines:
+        line = re.split('\n| ', line)
+        matrix = []
+        for each in line:
+            if each != '':
+                matrix.append(eval(each))
+        matrix+=[0,0,0,1]
+        cam_to_velo= np.reshape(matrix, (4, 4))
+        #print(poses[tp])
+    calib_file.close()
+    """
     poses_lines = poses_file.readlines()
     poses = {}
     for line in poses_lines:
@@ -200,18 +250,6 @@ def main():
         #print(poses[tp])
     poses_file.close()
 
-    calib_lines = calib_file.readlines()
-    for line in calib_lines:
-        line = re.split('\n| ', line)
-        matrix = []
-        for each in line:
-            if each != '':
-                matrix.append(eval(each))
-        matrix+=[0,0,0,1]
-        cam_to_velo= np.reshape(matrix, (4, 4))
-        #print(poses[tp])
-    calib_file.close()
-
     calib_lines = calib_file_1.readlines()
     for line in calib_lines:
         line = re.split('\n| ', line)
@@ -224,27 +262,30 @@ def main():
         break
         #print(poses[tp])
     calib_file_1.close()
-
+    """
 
     calib_path = os.path.join(calib_folder, 'calib.txt')
-    calib=GPS_to_camera@cam_to_velo
+    calib=inverse_rigid_trans(cam_to_velo)
     with open(calib_path, "w") as calib_file:
         key="Tr"
-        val=np.linalg.inv(calib)
-        val = val.flatten()[:12]
+        val = calib.flatten()[:12]
         val_str = '%.12e' % val[0]
         for v in val[1:]:
             val_str += ' %.12e' % v
         calib_file.write('%s: %s\n' % (key, val_str))
 
-    pose_path = os.path.join(pose_folder, 'poses.txt')
-    with open(pose_path, "w") as pose_file:
-        for element in sorted(poses.keys()):
-            #if (element<100):
-            x_arrstr = np.char.mod('%f', np.reshape(poses[element],(1,-1))[0][:12])
-            #print(x_arrstr)
-            # combine to a string
-            pose_file.write('%s\n' % " ".join(x_arrstr))
+
+    poses = readcam2world(poses_file)
+    filename = os.path.join(save_dir, 'poses.txt')
+    with open(filename, 'w') as f:
+        for v in poses.values():
+            for i in range(3):
+                for j in range(4):
+                    f.write(str(v[i, j]))
+                    f.write(" ")
+
+            f.write("\n")
+
     #raise  Exception()
     labels_lst={}
     velodyne_lst={}
@@ -323,6 +364,20 @@ def main():
 
                 pt_to_world = trans_matrices[(insId, tp)]
                 ref_to_world = reference_to_world[tp][insId]
+                #print(1)
+                # if tp in poses.keys():
+                #     pos_to_world = poses[tp]
+                # else:
+                #     if tp > list(poses)[-1]:
+                #         print("invalid data")
+                #         pos_to_world = []
+                #     else:
+                #         while True:
+                #             new_tp = tp + 1
+                #             if new_tp in poses.keys():
+                #                 pos_to_world = poses[new_tp]
+                #                 break
+                # pt = transform_pt(pt, pt_to_world, ref_to_world, pos_to_world)
                 pt = transform_pt(pt, pt_to_world, ref_to_world)
                 if(tp not in velodyne_lst):
                     velodyne_lst[tp]=pt.reshape(1,4)
@@ -339,26 +394,36 @@ def main():
                     else:
                         dict[[np_ply_1[:, 6][i]][0]] += 1
 
-        frame_total=dynamic_lst[index].split(".")[-1]
+        frame_total=dynamic_lst[index][:-4].split("/")[-1]
+        start,end=frame_total.split("_")
         #TODO 怎么处理重复的
-        for frame in frame_total:
+        if(index-1>-1):
+            start=int(static_lst[index-1][:-4].split("/")[-1].split("_")[-1])+1
+        for frame in range(int(start),int(end)+1):
         #for frame in range(1031):
-            if (frame not in poses): continue
+            if (frame not in poses or frame not in velodyne_lst): continue
             print(frame)
-            transform=np.linalg.inv(poses[frame]).T.astype("float32")
+            transform=inverse_rigid_trans(poses[frame]).astype("float32").T
+            #transform=np.linalg.inv(poses[frame]).T.astype("float32")
+            #print(poses[frame],frame)
            # print(transform)
-            if(frame in velodyne_lst):
-                curr_pcl=velodyne_lst[frame]
-                curr_label=labels_lst[frame]
-                del velodyne_lst[frame]
-                del labels_lst[frame]
-            new_pcl=curr_pcl@transform
-            new_pcl[:,2]=(-1)*new_pcl[:,2]
-            new_pcl[:, 1] = (-1) * new_pcl[:, 1]
-            dst_lid_path = os.path.join(lidar_folder, '%06d_1' % (ind) + '.bin')
+            curr_pcl=np.r_[curr_pcl,velodyne_lst[frame]]
+            curr_label=np.append(curr_label,labels_lst[frame])
+            del velodyne_lst[frame]
+            del labels_lst[frame]
+            new_pcl=curr_pcl@transform@calib.astype("float32")
+            #new_pcl=curr_pcl@transform@inverse_rigid_trans(poses[frame][:3, :]).astype("int32")
+            #new_pcl=curr_pcl@transform@(cam_to_velo.astype("float32"))
+            """
+            new_pcl = np.ones(curr_pcl.shape)
+            new_pcl[:,0]=curr_pcl[:,2]
+            new_pcl[:,1]=curr_pcl[:,0]*(-1)
+            new_pcl[:, 2] = (-1)*curr_pcl[:, 1]
+            """
+            dst_lid_path = os.path.join(lidar_folder, '%06d' % (ind) + '.bin')
             with open(dst_lid_path, "w") as lid_file:
                 new_pcl.astype("float32").tofile(lid_file)
-            dst_label_path = os.path.join(label_folder, '%06d_1' % (ind) + '.label')
+            dst_label_path = os.path.join(label_folder, '%06d' % (ind) + '.label')
             with open(dst_label_path, "w") as label_file:
                 curr_label.astype("int32").tofile(label_file)
             ind+=1
@@ -371,3 +436,4 @@ if __name__ == '__main__':
         pass
     finally:
         print('\ndone.')
+
