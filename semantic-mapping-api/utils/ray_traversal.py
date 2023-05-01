@@ -10,9 +10,8 @@ FREE = 0
 OCCUPIED = 1
 FREE_LABEL = 0
 MAX_POINT_NUM = 10
-#TERRAIN_LABEL = 72
-#SIDEWALK_LABEL = 48
-ROAD_LABEL=40
+TERRAIN_LABEL = 72
+SIDEWALK_LABEL = 48
 BINARY_OBSERVED = 1
 BINARY_NOT_OBSERVED = 0
 # DO NOT CHANGE
@@ -240,7 +239,7 @@ def ray_traversal(
         auto distance2end = abs(current_voxel[0] - last_voxel[0]) * voxel_size_[0] + abs(current_voxel[1] - last_voxel[1]) * voxel_size_[1] + abs(current_voxel[2] - last_voxel[2]) * voxel_size_[2];
         auto distance2start_height = abs(current_voxel[2] - target_voxel[2]) * voxel_size_[2];
         if(distance2start>{DISTANCE_THESHOLD_IGNORE} && distance2end>{DISTANCE_THESHOLD_IGNORE}){{
-            if($points_labels_inrange[i]=={ROAD_LABEL}){{
+            if($points_labels_inrange[i]=={TERRAIN_LABEL} || $points_labels_inrange[i]<={SIDEWALK_LABEL}){{
                 if(distance2start_height < {RAY_ROAD_IGNORE_DISTANCE}){{
                     continue;
                 }}
