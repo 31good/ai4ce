@@ -49,9 +49,6 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     spatial_shape = [256, 256, 32]
     occlusion_theshold = 1
     # Read and process points, poses, and labels
-    pcds = []
-    labels = []
-    origins = []
     pcd_files = sorted(os.listdir(velodyne_path))
     labels_files = sorted(os.listdir(labels_path))
     poses = np.loadtxt(poses_file, dtype=np.float32).reshape(-1, 3, 4)
@@ -62,6 +59,9 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     poses = calib_tran_inv @ poses @ calib_tran
     for j in range(0,len(pcd_files)//70,5):
         end=j+70
+        pcds = []
+        labels = []
+        origins = []
         if(j+70>len(pcd_files)):end=len(pcd_files)
         for i in range(j,end):
             pose_first_inv = np.linalg.inv(poses[i])
@@ -87,26 +87,26 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
             pcds.append(points)
             labels.append(label)
             origins.append(origin)
-    # assert()
-    pcds = np.concatenate(pcds, axis=0)
-    labels = np.concatenate(labels, axis=0)
-    labels=np.vectorize(map_labels)(labels.astype("int32"))
-    origins = np.concatenate(origins, axis=0)
+        # assert()
+        pcds = np.concatenate(pcds, axis=0)
+        labels = np.concatenate(labels, axis=0)
+        labels=np.vectorize(map_labels)(labels.astype("int32"))
+        origins = np.concatenate(origins, axis=0)
 
-    # Convert to torch tensor 
-    pcds_dev = torch.from_numpy(pcds).to(_device)
-    labels_dev = torch.from_numpy(labels).long().to(_device)
-    origins_dev = torch.from_numpy(origins).to(_device)
+        # Convert to torch tensor 
+        pcds_dev = torch.from_numpy(pcds).to(_device)
+        labels_dev = torch.from_numpy(labels).long().to(_device)
+        origins_dev = torch.from_numpy(origins).to(_device)
 
-    voxel_coors, voxel_state, voxel_label, voxel_occ_count, voxel_free_count = ray_traversal(
-        origins_dev, pcds_dev, labels_dev,
-        point_cloud_range, voxel_size, spatial_shape,
-    )
+        voxel_coors, voxel_state, voxel_label, voxel_occ_count, voxel_free_count = ray_traversal(
+            origins_dev, pcds_dev, labels_dev,
+            point_cloud_range, voxel_size, spatial_shape,
+        )
 
-    final_voxel_label = voxel_label.cpu().numpy().astype(np.uint16)
-    final_invalid = torch.logical_and(voxel_state == -1, voxel_label == 0).cpu().numpy().astype(np.uint8)
-    final_voxel_label.tofile(os.path.join(out_dir, f"{str(index).zfill(6)}.label"))
-    final_invalid.tofile(os.path.join(out_dir, f"{str(index).zfill(6)}.invalid"))
+        final_voxel_label = voxel_label.cpu().numpy().astype(np.uint16)
+        final_invalid = torch.logical_and(voxel_state == -1, voxel_label == 0).cpu().numpy().astype(np.uint8)
+        final_voxel_label.tofile(os.path.join(out_dir, f"{str(j).zfill(6)}.label"))
+        final_invalid.tofile(os.path.join(out_dir, f"{str(j).zfill(6)}.invalid"))
 
 
 
