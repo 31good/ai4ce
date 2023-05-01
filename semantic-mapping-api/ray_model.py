@@ -35,13 +35,13 @@ torch.backends.cudnn.allow_tf32 = False
 parser = argparse.ArgumentParser(description='', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--start', type=int, default=0)
 parser.add_argument('--end', type=int, default=10)
-parser.add_argument('--input', type=str, default='/mnt/NAS/home/zijun/test')
+parser.add_argument('--input', type=str, default='/mnt/hdd_0/KITTI-360/sequences/03/single_static')
 args = parser.parse_args()
 dict={-1:0}
 def map_labels(x):
     return dict.get(x, x)
 
-def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib_tran_inv):
+def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib_tran_inv,dynamic_point,dynamic_label):
     # Initialize parameters
     _device = torch.device('cuda')
     voxel_size = [0.2, 0.2, 0.2]
@@ -54,18 +54,20 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     origins = []
     pcd_files = sorted(os.listdir(velodyne_path))
     labels_files = sorted(os.listdir(labels_path))
-    dynamic_point_files=sorted(os.listdir(dynamic_point))
-    dynamic_label_points=sorted(os.listdir(dynamic_label))
     poses = np.loadtxt(poses_file, dtype=np.float32).reshape(-1, 3, 4)
     dummy = np.broadcast_to(np.array([0, 0, 0, 1]), (poses.shape[0], 1, 4))
     poses = np.concatenate([poses, dummy], axis=1)
+    #print(poses)
+    #print(calib_tran)
     poses = calib_tran_inv @ poses @ calib_tran
-    for j in range(len(pcd_files)//70,5):
-        for i in range(j,j+70):
+    for j in range(0,len(pcd_files)//70,5):
+        end=j+70
+        if(j+70>len(pcd_files)):end=len(pcd_files)
+        for i in range(j,end):
             pose_first_inv = np.linalg.inv(poses[i])
-            if(i==j and pcd_file[i] in dynamic_point_files):
-                points=np.fromfile(os.paht.join(dynamic_point,pcd_files[i]),dytype=np.float32).reshape(-1,4)[:,:3]
-                label=np.fromfile(os.paht.join(dynamic_label_point,labels_files[i]),dtype=np.int32)
+            if(i==j):
+                points=np.fromfile(os.path.join(dynamic_point,pcd_files[i]),dtype=np.float32).reshape(-1,4)[:,:3]
+                label=np.fromfile(os.path.join(dynamic_label,labels_files[i]),dtype=np.int32)
             else:
                 points = np.fromfile(os.path.join(velodyne_path, pcd_files[i]), dtype=np.float32).reshape(-1, 4)[:, :3]
                 label = np.fromfile(os.path.join(labels_path, labels_files[i]), dtype=np.int32)
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     dynamic_point=os.path.join("/mnt/hdd_0/KITTI-360/sequences/03/single","velodyne")
     dynamic_label=os.path.join("/mnt/hdd_0/KITTI-360/sequences/03/single","labels")
     with open (calib_file, "r") as f:
-        calib = f.readlines()[5]
+        calib = f.readlines()[0]
     calib_tran = np.fromstring(calib.split(": ")[-1], sep=" ", dtype=np.float32).reshape(3, 4)
     calib_tran = np.concatenate([calib_tran, np.array([[0, 0, 0, 1]])], axis=0)
     calib_tran_inv = np.linalg.inv(calib_tran)
@@ -131,7 +133,7 @@ if __name__ == "__main__":
     labels_folders = sorted(os.listdir(labels_dir))
     """
 
-    main_func(velodyne_dir,poses_file,labels_dir,out_dir,calib_tran,calib_tran_inv,dynamic_label,dynamic_point)
+    main_func(velodyne_dir,poses_file,labels_dir,out_dir,calib_tran,calib_tran_inv,dynamic_point,dynamic_label)
     """
     for i in tqdm(range(len(velodyne_folders))):
         velodyne_path = os.path.join(velodyne_dir, velodyne_folders[i])
