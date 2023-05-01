@@ -37,7 +37,9 @@ parser.add_argument('--start', type=int, default=0)
 parser.add_argument('--end', type=int, default=10)
 parser.add_argument('--input', type=str, default='/mnt/NAS/home/zijun/test')
 args = parser.parse_args()
-
+dict={-1:0}
+def map_labels(x):
+    return dict.get(x, x)
 
 def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib_tran_inv):
     # Initialize parameters
@@ -46,7 +48,6 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     point_cloud_range = [0, -25.6, -2, 51.2, 25.6, 4.4]
     spatial_shape = [256, 256, 32]
     occlusion_theshold = 1
-
     # Read and process points, poses, and labels
     pcds = []
     labels = []
@@ -59,19 +60,17 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     dummy = np.broadcast_to(np.array([0, 0, 0, 1]), (poses.shape[0], 1, 4))
     poses = np.concatenate([poses, dummy], axis=1)
     poses = calib_tran_inv @ poses @ calib_tran
-    pose_first_inv = np.linalg.inv(poses[0])
     for j in range(len(pcd_files)//70,5):
         for i in range(j,j+70):
-            points = np.fromfile(os.path.join(velodyne_path, pcd_files[i]), dtype=np.float32).reshape(-1, 4)[:, :3]
-            label = np.fromfile(os.path.join(labels_path, labels_files[i]), dtype=np.int32)
+            pose_first_inv = np.linalg.inv(poses[i])
             if(i==j and pcd_file[i] in dynamic_point_files):
-                new_points=np.fromfile(os.paht.join(dynamic_point,pcd_files[i]),dytype=np.float32).reshape(-1,4)[:,:3]
-                points=np.concatenate((points,new_points),axis=0)
-                new_labels=np.fromfile(os.paht.join(dynamic_label_point,labels_files[i]),dtype=np.int32)
-                label+=new_labels
-                print(new_labels.shape,new_points.shape)
+                points=np.fromfile(os.paht.join(dynamic_point,pcd_files[i]),dytype=np.float32).reshape(-1,4)[:,:3]
+                label=np.fromfile(os.paht.join(dynamic_label_point,labels_files[i]),dtype=np.int32)
+            else:
+                points = np.fromfile(os.path.join(velodyne_path, pcd_files[i]), dtype=np.float32).reshape(-1, 4)[:, :3]
+                label = np.fromfile(os.path.join(labels_path, labels_files[i]), dtype=np.int32)
             pose = poses[i]
-            print(pose)
+            #print(pose)
             origin = np.concatenate([pose[:3, 3], np.array([1])], axis=0)
 
             points = np.concatenate([points, np.ones((points.shape[0], 1))], axis=1)
@@ -89,6 +88,7 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
     # assert()
     pcds = np.concatenate(pcds, axis=0)
     labels = np.concatenate(labels, axis=0)
+    labels=np.vectorize(map_labels)(labels.astype("int32"))
     origins = np.concatenate(origins, axis=0)
 
     # Convert to torch tensor 
@@ -110,13 +110,13 @@ def main_func(velodyne_path, poses_file, labels_path, out_dir, calib_tran, calib
 
 if __name__ == "__main__": 
     data_dir = args.input
-    out_dir = os.path.join(data_dir, "sequences", "00", "voxels")
+    out_dir = os.path.join(data_dir, "voxels_test")
     velodyne_dir = os.path.join(data_dir, "velodyne")
     poses_file = os.path.join(data_dir, "poses.txt")
     labels_dir = os.path.join(data_dir, "labels")
     calib_file = os.path.join(data_dir, "calib.txt")
-    dynamic_point=os.path.join("/mnt/NAS/home/zijun/dynamic","velodyne")
-    dynamic_label=os.path.join("/mnt/NAS/home/zijun/dynamic","labels")
+    dynamic_point=os.path.join("/mnt/hdd_0/KITTI-360/sequences/03/single","velodyne")
+    dynamic_label=os.path.join("/mnt/hdd_0/KITTI-360/sequences/03/single","labels")
     with open (calib_file, "r") as f:
         calib = f.readlines()[5]
     calib_tran = np.fromstring(calib.split(": ")[-1], sep=" ", dtype=np.float32).reshape(3, 4)
